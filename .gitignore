@@ -7,3 +7,7 @@ __pycache__/
 predictions*.csv
 rebuilt/
 *.log
+# Generated offline by assemble_data.py from committed, verified chunks
+data/rebuild_inputs.json.gz
+data/all_available.csv.gz
+data/evaluation_10to1.csv.gz
