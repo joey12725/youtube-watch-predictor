@@ -1,0 +1,23 @@
+[project]
+name = "youtube-watch-predictor"
+version = "0.1.0"
+description = "Offline dataset builder, baselines and leakage-aware evaluation for predicting which YouTube feed videos a viewer watches."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Joey Hersh" }]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+plot = ["matplotlib"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E731"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
