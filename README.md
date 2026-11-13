@@ -91,7 +91,7 @@ More detail in [`docs/methodology.md`](docs/methodology.md).
 
 ## Tech
 
-Python standard library only (`csv`, `gzip`, `json`, `random`, `math`). Ruff for lint, `unittest` for tests, GitHub Actions on Python 3.9, 3.11 and 3.13.
+Python standard library only (`csv`, `gzip`, `json`, `random`, `math`). Ruff for lint, `unittest` for tests, GitHub Actions on Python 3.10, 3.12 and 3.13.
 
 ---
 
