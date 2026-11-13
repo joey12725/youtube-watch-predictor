@@ -1,13 +1,16 @@
 __pycache__/
 *.pyc
 .venv/
+.ruff_cache/
 .env
 .env.*
-*.csv
-predictions*.csv
+.DS_Store
+
+# Exports, generated datasets and predictions stay local
+data/
 rebuilt/
+*.csv
+*.csv.gz
+*.json.gz
+predictions*.csv
 *.log
-# Generated offline by assemble_data.py from committed, verified chunks
-data/rebuild_inputs.json.gz
-data/all_available.csv.gz
-data/evaluation_10to1.csv.gz

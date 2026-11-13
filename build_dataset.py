@@ -1,7 +1,7 @@
-"""Build the offline personal YouTube evaluation dataset (standard library only)."""
+"""Turn a YouTube activity export into labeled, split CSVs for watch prediction (stdlib only)."""
 from collections import defaultdict
-import re
 import random
+import re
 
 
 def select_ratio(rows, ratio=10, seed=20261109):
@@ -49,7 +49,7 @@ def build_rows(history, watch_later, feeds, progress, metadata, cutoff):
     all_history = {r['video_id'] for r in history}
     shorts = {r['video_id'] for r in history + feeds if r.get('is_short') is True}
     for r in history:
-        if r['local_date'] >= cutoff and r.get('is_short') is False and r['video_id'] not in shorts:
+        if (cutoff is None or r['local_date'] >= cutoff) and r.get('is_short') is False and r['video_id'] not in shorts:
             events[r['video_id']].append(r)
     saved = {r['video_id'] for r in watch_later}
     evidence_of_watching = {p['video_id'] for p in progress
@@ -71,7 +71,8 @@ def build_rows(history, watch_later, feeds, progress, metadata, cutoff):
         m = metadata.get(video_id, {})
         snippet, statistics = m.get('snippet', {}), m.get('statistics', {})
         thumbnails = snippet.get('thumbnails', {})
-        thumbnail = next((thumbnails[k]['url'] for k in ('maxres', 'standard', 'high', 'medium', 'default') if k in thumbnails), source.get('thumbnail_url'))
+        thumbnail = next((thumbnails[k]['url'] for k in ('maxres', 'standard', 'high', 'medium', 'default')
+                          if k in thumbnails), source.get('thumbnail_url'))
         duration = duration_seconds(m.get('contentDetails', {}).get('duration'))
         observations_with_values = [p for p in observations[video_id] if progress_proxy(p) is not None]
         latest = max(observations_with_values, key=lambda p: p.get('observed_at') or '', default={})
@@ -123,12 +124,13 @@ def main():
     import json
     from pathlib import Path
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--inputs', type=Path, default=Path('data/rebuild_inputs.json.gz'))
+    parser.add_argument('--inputs', type=Path, default=Path('data/inputs.json.gz'))
     parser.add_argument('--output-dir', type=Path, default=Path('data'))
-    parser.add_argument('--cutoff', default='2026-04-22')
+    parser.add_argument('--cutoff', help='YYYY-MM-DD; ignore watches before this date as positives '
+                        '(they still disqualify negatives). Default: use all history.')
     parser.add_argument('--seed', type=int, default=20261109)
     args = parser.parse_args()
-    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', args.cutoff):
+    if args.cutoff is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', args.cutoff):
         parser.error('cutoff must be YYYY-MM-DD')
     inputs = json.loads(gzip.decompress(args.inputs.read_bytes()))
     for group in ('history', 'watch_later', 'feeds', 'progress'):
@@ -152,7 +154,7 @@ def main():
     negatives = len(rows) - positives
     shortfall = max(0, positives * 10 - negatives)
     report = {
-        'cutoff': args.cutoff, 'cutoff_status': 'first recorded day after large history gap, not proven setting-change date',
+        'cutoff': args.cutoff,
         'seed': args.seed, 'rows': len(rows), 'watched': positives, 'negative_candidates': negatives,
         'full_history_ratio_met': shortfall == 0, 'negative_shortfall': shortfall,
         'ten_to_one_subset_rows': len(subset), 'ten_to_one_subset_watched': sum(r['watched'] for r in subset),
@@ -171,18 +173,18 @@ def main():
                                          'negative': sum(not r['watched'] for r in items if r['split'] == split)}
                                    for split in ('train', 'validation', 'test')}
                          for variant, items in [('all_available', rows), ('evaluation_10to1', subset)]},
-        'limitations': [
-            'False watched labels mean absent from all collected history, not proven never watched or disliked.',
-            'Exact personal watch percentages are unavailable and remain blank; proxies are separately named.',
-            'Shorts and unknown formats are excluded; unavailable video metadata remain explicitly missing.',
-            'Negative exposures were collected in November, whereas positive watches span April-November: temporal/exposure bias.',
-            'Metadata and Watch Later are collection-time snapshots, not historical state at watch/exposure time.',
-            'Splits are stratified by label and video-disjoint within each artifact, not channel-disjoint or temporal. Do not mix dataset variants.',
-            'The ratio subset samples positives; the all-available file preserves every eligible positive.'
+        'label_notes': [
+            'watched=false means absent from all collected history: a weak negative, not a confirmed skip.',
+            'Exact watch percentages are not exposed by the source, so percentage_watched stays blank; '
+            'UI progress proxies are kept in separately named columns.',
+            'Shorts and unknown-format watches are excluded from positives.',
+            'Metadata and Watch Later are collection-time snapshots, not state at watch or exposure time.',
+            'Splits are label-stratified and video-disjoint within each CSV, not channel-disjoint or temporal. '
+            'Do not train on one CSV variant and test on the other.',
         ]
     }
     (output / 'dataset_report.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps({k: v for k, v in report.items() if k not in ('source', 'split_counts', 'limitations')}))
+    print(json.dumps({k: v for k, v in report.items() if k not in ('source', 'split_counts', 'label_notes')}))
 
 
 if __name__ == '__main__':
