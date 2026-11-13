@@ -1,4 +1,5 @@
 import unittest
+
 from evaluate import metrics
 
 
@@ -13,7 +14,13 @@ class EvaluationTests(unittest.TestCase):
                 evaluate.score_rows(truth, bad)
 
     def test_cli_runs_offline_baseline_on_selected_split(self):
-        import csv, gzip, json, pathlib, subprocess, sys, tempfile
+        import csv
+        import gzip
+        import json
+        import pathlib
+        import subprocess
+        import sys
+        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             dataset = pathlib.Path(tmp) / 'data.csv.gz'
             with gzip.open(dataset, 'wt', newline='') as f:

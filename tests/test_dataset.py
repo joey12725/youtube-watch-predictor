@@ -1,4 +1,5 @@
 import unittest
+
 from build_dataset import build_rows
 
 
@@ -45,7 +46,13 @@ class DatasetTests(unittest.TestCase):
             self.assertEqual(sum(not r['watched'] for r in part), 10 * sum(r['watched'] for r in part))
 
     def test_cli_writes_reproducible_full_and_ten_to_one_csvs(self):
-        import csv, gzip, json, pathlib, subprocess, sys, tempfile
+        import csv
+        import gzip
+        import json
+        import pathlib
+        import subprocess
+        import sys
+        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
             inputs = root / 'input.json.gz'
